@@ -100,7 +100,6 @@ func main() {
 	// Download file from John Hopkins
 	fileUrl := "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 	filename := "time_series_covid19_deaths_global.csv"
-	// filename := "test.csv"
 	downloaded := false
 	err := DownloadFile(filename, fileUrl, &downloaded)
 	if err != nil {
@@ -189,6 +188,7 @@ func main() {
 		}
 		jhdata.country[i].data = make([]int64, nbrOfDates)
 		for j := 0; j < nbrOfDates; j++ {
+			println("i=", i, "j=", j)
 			jhdata.country[i].data[j], err = strconv.ParseInt(line[j+4], 10, 64)
 			if err != nil {
 				fmt.Println("err 3")
@@ -221,7 +221,7 @@ func main() {
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := 0; j < nbrOfCountries; j++ {
 			if strings.Compare(selCountry[i].country, jhdata.country[j].country) == 0 && strings.Compare(jhdata.country[j].province, "") == 0 {
-				println("index = ", j, "C = ", jhdata.country[j].country, "P = ", jhdata.country[j].province)
+				// println("index = ", j, "C = ", jhdata.country[j].country, "P = ", jhdata.country[j].province)
 				selCountry[i].jhIndex = j
 				break
 			}
@@ -255,11 +255,11 @@ func main() {
 	// Create plot
 
 	// xticks defines how we convert and display time.Time values.
-	// xticks := plot.TimeTicks{Format: "2006-01-02"}
+	xticks := plot.TimeTicks{Format: "2006-01-02"}
 
 	p := plot.New()
 	p.Title.Text = "Title"
-	// p.X.Tick.Marker = xticks
+	p.X.Tick.Marker = xticks
 	p.Y.Label.Text = "Deaths per one millon"
 	p.Add(plotter.NewGrid())
 
