@@ -166,6 +166,17 @@ func main() {
 		exitError(err)
 		jhdata.dates[i] = float64(time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix())
 		// fmt.Println(jhdata.dates_s[i], jhdata.dates[i])
+		myTime := time.Unix(int64(jhdata.dates[i]), 0)
+		// fmt.Println(myTime.Date())
+		// fmt.Println(myTime.Unix())
+		// myTime = myTime.AddDate(0, 0, 1)
+		// fmt.Println(myTime.Date())
+		// fmt.Println(myTime.Unix())
+		myYear, myMonth, myDay := myTime.Date()
+		// fmt.Println(myYear, int(myMonth), myDay)
+		myDate := strconv.Itoa(myYear) + "-" + strconv.Itoa(int(myMonth)) + "-" + strconv.Itoa(myDay)
+		fmt.Println(myDate)
+
 	}
 	for i := 0; i < nbrOfCountries; i++ {
 		scanner2.Scan()
@@ -188,7 +199,6 @@ func main() {
 		}
 		jhdata.country[i].data = make([]int64, nbrOfDates)
 		for j := 0; j < nbrOfDates; j++ {
-			println("i=", i, "j=", j)
 			jhdata.country[i].data[j], err = strconv.ParseInt(line[j+4], 10, 64)
 			if err != nil {
 				fmt.Println("err 3")
@@ -221,7 +231,7 @@ func main() {
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := 0; j < nbrOfCountries; j++ {
 			if strings.Compare(selCountry[i].country, jhdata.country[j].country) == 0 && strings.Compare(jhdata.country[j].province, "") == 0 {
-				// println("index = ", j, "C = ", jhdata.country[j].country, "P = ", jhdata.country[j].province)
+				println("index = ", j, "C = ", jhdata.country[j].country, "P = ", jhdata.country[j].province)
 				selCountry[i].jhIndex = j
 				break
 			}
@@ -255,11 +265,11 @@ func main() {
 	// Create plot
 
 	// xticks defines how we convert and display time.Time values.
-	xticks := plot.TimeTicks{Format: "2006-01-02"}
+	// xticks := plot.TimeTicks{Format: "2006-01-02"}
 
 	p := plot.New()
 	p.Title.Text = "Title"
-	p.X.Tick.Marker = xticks
+	p.X.Tick.Marker = myTicks{}
 	p.Y.Label.Text = "Deaths per one millon"
 	p.Add(plotter.NewGrid())
 
@@ -279,9 +289,29 @@ func main() {
 		p.Add(plot_line)
 	}
 
-	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, "plot_output.png")
+	err = p.Save(40*vg.Centimeter, 20*vg.Centimeter, "plot_output.png")
 	if err != nil {
 		log.Panic(err)
 	}
 
+}
+
+// MyTicks, from https://github.com/gonum/plot/issues/296
+type myTicks struct{}
+
+// Ticks returns Ticks in the specified range.
+func (myTicks) Ticks(min, max float64) []plot.Tick {
+	if max <= min {
+		panic("illegal range")
+	}
+	var ticks []plot.Tick
+	for i := min; i <= max; i += (86400) {
+		myTime := time.Unix(int64(i), 0)
+		myYear, myMonth, myDay := myTime.Date()
+		if myDay == 1 {
+			myDate := strconv.Itoa(myYear) + "-" + strconv.Itoa(int(myMonth)) + "-" + strconv.Itoa(myDay)
+			ticks = append(ticks, plot.Tick{Value: i, Label: myDate})
+		}
+	}
+	return ticks
 }
