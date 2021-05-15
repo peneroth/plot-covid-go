@@ -22,13 +22,13 @@ type countryData struct {
 	country  string
 	lat      float64
 	long     float64
-	data     []int64
+	deaths   []int64
 }
 
-type setOfData struct {
+type setOfJhData struct {
 	heading [4]string
 	dates_s []string
-	dates   []float64
+	dates   []int64
 	country []countryData
 }
 
@@ -129,17 +129,17 @@ func main() {
 	}
 	nbrOfCountries-- // Remove first row (heading)
 	f1.Close()
-	fmt.Println(nbrOfCountries)
-	fmt.Println(nbrOfDates)
+	fmt.Println("nbrOfCountries = ", nbrOfCountries)
+	fmt.Println("nbrOfDates = ", nbrOfDates)
 
 	//
 	// Read the data
 	//
 	// Allocate memory
-	var jhdata setOfData
-	jhdata.dates_s = make([]string, nbrOfDates)
-	jhdata.dates = make([]float64, nbrOfDates)
-	jhdata.country = make([]countryData, nbrOfCountries)
+	var jhData setOfJhData
+	jhData.dates_s = make([]string, nbrOfDates)
+	jhData.dates = make([]int64, nbrOfDates)
+	jhData.country = make([]countryData, nbrOfCountries)
 	f2, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -151,32 +151,20 @@ func main() {
 		os.Exit(0)
 	}
 	line := strings.Split(scanner2.Text(), ",")
-	jhdata.heading[0] = line[0]
-	jhdata.heading[1] = line[1]
-	jhdata.heading[2] = line[2]
-	jhdata.heading[3] = line[3]
+	jhData.heading[0] = line[0]
+	jhData.heading[1] = line[1]
+	jhData.heading[2] = line[2]
+	jhData.heading[3] = line[3]
 	for i := 0; i < nbrOfDates; i++ {
-		jhdata.dates_s[i] = line[i+4]
-		s := strings.Split(jhdata.dates_s[i], "/")
+		jhData.dates_s[i] = line[i+4]
+		s := strings.Split(jhData.dates_s[i], "/")
 		month, err := strconv.Atoi(s[0])
 		exitError(err)
 		day, err := strconv.Atoi(s[1])
 		exitError(err)
 		year, err := strconv.Atoi(s[2])
 		exitError(err)
-		jhdata.dates[i] = float64(time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix())
-		// fmt.Println(jhdata.dates_s[i], jhdata.dates[i])
-		myTime := time.Unix(int64(jhdata.dates[i]), 0)
-		// fmt.Println(myTime.Date())
-		// fmt.Println(myTime.Unix())
-		// myTime = myTime.AddDate(0, 0, 1)
-		// fmt.Println(myTime.Date())
-		// fmt.Println(myTime.Unix())
-		myYear, myMonth, myDay := myTime.Date()
-		// fmt.Println(myYear, int(myMonth), myDay)
-		myDate := strconv.Itoa(myYear) + "-" + strconv.Itoa(int(myMonth)) + "-" + strconv.Itoa(myDay)
-		fmt.Println(myDate)
-
+		jhData.dates[i] = time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix()
 	}
 	for i := 0; i < nbrOfCountries; i++ {
 		scanner2.Scan()
@@ -186,20 +174,19 @@ func main() {
 		s = strings.Replace(s, "\"Bonaire, Sint Eustatius and Saba\"", "Bonaire; Sint Eustatius and Saba", -1)
 		s = strings.Replace(s, "\"Saint Helena, Ascension and Tristan da Cunha\"", "Saint Helena; Ascension and Tristan da Cunha", -1)
 		line = strings.Split(s, ",")
-		// fmt.Println("i = ", i, " len(line) = ", len(line))
-		jhdata.country[i].province = line[0]
-		jhdata.country[i].country = line[1]
-		jhdata.country[i].lat, err = strconv.ParseFloat(line[2], 64)
+		jhData.country[i].province = line[0]
+		jhData.country[i].country = line[1]
+		jhData.country[i].lat, err = strconv.ParseFloat(line[2], 64)
 		if err != nil {
-			jhdata.country[i].lat = 0
+			jhData.country[i].lat = 0
 		}
-		jhdata.country[i].long, err = strconv.ParseFloat(line[3], 64)
+		jhData.country[i].long, err = strconv.ParseFloat(line[3], 64)
 		if err != nil {
-			jhdata.country[i].long = 0
+			jhData.country[i].long = 0
 		}
-		jhdata.country[i].data = make([]int64, nbrOfDates)
+		jhData.country[i].deaths = make([]int64, nbrOfDates)
 		for j := 0; j < nbrOfDates; j++ {
-			jhdata.country[i].data[j], err = strconv.ParseInt(line[j+4], 10, 64)
+			jhData.country[i].deaths[j], err = strconv.ParseInt(line[j+4], 10, 64)
 			if err != nil {
 				fmt.Println("err 3")
 				panic(err)
@@ -208,30 +195,26 @@ func main() {
 	}
 	f2.Close()
 
-	fmt.Println(jhdata.country[71].country)
-	fmt.Println(jhdata.country[71].province)
-	fmt.Println(jhdata.country[71].data[12])
-
 	// Country selection and polulation
 	nbrPlotCountries := 4
 	selCountry := make([]countryIndex, nbrPlotCountries)
 
 	selCountry[0].country = "Sweden"
 	selCountry[0].polulation = 10
-	selCountry[0].lineColor = color.RGBA{G: 255, A: 255}
+	selCountry[0].lineColor = color.RGBA{B: 255, A: 255}
 	selCountry[1].country = "Italy"
 	selCountry[1].polulation = 60
 	selCountry[1].lineColor = color.RGBA{R: 255, A: 255}
 	selCountry[2].country = "France"
 	selCountry[2].polulation = 67
-	selCountry[2].lineColor = color.RGBA{B: 255, A: 255}
+	selCountry[2].lineColor = color.RGBA{G: 255, A: 255}
 	selCountry[3].country = "Denmark"
 	selCountry[3].polulation = 5.8
 	selCountry[3].lineColor = color.RGBA{B: 255, R: 255, A: 255}
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := 0; j < nbrOfCountries; j++ {
-			if strings.Compare(selCountry[i].country, jhdata.country[j].country) == 0 && strings.Compare(jhdata.country[j].province, "") == 0 {
-				println("index = ", j, "C = ", jhdata.country[j].country, "P = ", jhdata.country[j].province)
+			if strings.Compare(selCountry[i].country, jhData.country[j].country) == 0 && strings.Compare(jhData.country[j].province, "") == 0 {
+				fmt.Println("Country =", jhData.country[j].country, "Province =", jhData.country[j].province, "index =", j)
 				selCountry[i].jhIndex = j
 				break
 			}
@@ -247,7 +230,7 @@ func main() {
 		jhProcData.country[i].newDeaths = make([]int64, nbrOfDates)
 		jhProcData.country[i].newDeaths[0] = 0
 		for j := 1; j < nbrOfDates; j++ {
-			jhProcData.country[i].newDeaths[j] = jhdata.country[i].data[j] - jhdata.country[i].data[j-1]
+			jhProcData.country[i].newDeaths[j] = jhData.country[i].deaths[j] - jhData.country[i].deaths[j-1]
 		}
 		// Calc average value
 		avgSize := 7 // must be an odd value
@@ -260,13 +243,17 @@ func main() {
 			}
 			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(avgSize)
 		}
+		// Partial moving agerage for the last dates
+		for j := nbrOfDates - avgBoarder; j < nbrOfDates; j++ {
+			meanValue := int64(0)
+			for k := j - avgBoarder; k < nbrOfDates; k++ {
+				meanValue += jhProcData.country[i].newDeaths[k]
+			}
+			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(nbrOfDates-(j-avgBoarder))
+		}
 	}
 
-	// Create plot
-
-	// xticks defines how we convert and display time.Time values.
-	// xticks := plot.TimeTicks{Format: "2006-01-02"}
-
+	// Create plot 1
 	p := plot.New()
 	p.Title.Text = "Title"
 	p.X.Tick.Marker = myTicks{}
@@ -277,7 +264,7 @@ func main() {
 	pts := make(plotter.XYs, nbrOfDates)
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := range pts {
-			pts[j].X = jhdata.dates[j]
+			pts[j].X = float64(jhData.dates[j])
 			pts[j].Y = float64(jhProcData.country[selCountry[i].jhIndex].newDeathsMean[j]) / selCountry[i].polulation
 		}
 		plot_line, err := plotter.NewLine(pts)
@@ -287,6 +274,8 @@ func main() {
 		plot_line.Color = selCountry[i].lineColor
 		// fmt.Printf("%T\n", plot_line.Color)
 		p.Add(plot_line)
+		p.Legend.Add(selCountry[i].country, plot_line)
+		p.Legend.Top = true
 	}
 
 	err = p.Save(40*vg.Centimeter, 20*vg.Centimeter, "plot_output.png")
@@ -294,9 +283,39 @@ func main() {
 		log.Panic(err)
 	}
 
+	// Create plot 2
+	p2 := plot.New()
+	p2.Title.Text = "Title"
+	p2.X.Tick.Marker = myTicks{}
+	p2.Y.Label.Text = "Deaths per one millon"
+	p2.Add(plotter.NewGrid())
+
+	// fmt.Printf("%T\n", plotLines[0].pts)
+	pts2 := make(plotter.XYs, nbrOfDates)
+	for i := 0; i < nbrPlotCountries; i++ {
+		for j := range pts {
+			pts2[j].X = float64(jhData.dates[j])
+			pts2[j].Y = float64(jhData.country[selCountry[i].jhIndex].deaths[j]) / selCountry[i].polulation
+		}
+		plot_line2, err := plotter.NewLine(pts2)
+		if err != nil {
+			log.Panic(err)
+		}
+		plot_line2.Color = selCountry[i].lineColor
+		// fmt.Printf("%T\n", plot_line.Color)
+		p2.Add(plot_line2)
+		p2.Legend.Add(selCountry[i].country, plot_line2)
+		p2.Legend.Top = false
+	}
+
+	err = p2.Save(40*vg.Centimeter, 20*vg.Centimeter, "plot_output2.png")
+	if err != nil {
+		log.Panic(err)
+	}
+
 }
 
-// MyTicks, from https://github.com/gonum/plot/issues/296
+// MyTicks, based on example at https://github.com/gonum/plot/issues/296
 type myTicks struct{}
 
 // Ticks returns Ticks in the specified range.
@@ -309,9 +328,19 @@ func (myTicks) Ticks(min, max float64) []plot.Tick {
 		myTime := time.Unix(int64(i), 0)
 		myYear, myMonth, myDay := myTime.Date()
 		if myDay == 1 {
-			myDate := strconv.Itoa(myYear) + "-" + strconv.Itoa(int(myMonth)) + "-" + strconv.Itoa(myDay)
+			myDate := IntToString(myYear) + "-" + IntToString(int(myMonth)) + "-" + IntToString(myDay)
 			ticks = append(ticks, plot.Tick{Value: i, Label: myDate})
 		}
 	}
 	return ticks
+}
+
+func IntToString(i int) string {
+	var s string
+	if i < 10 {
+		s = "0" + strconv.Itoa(i)
+	} else {
+		s = strconv.Itoa(i)
+	}
+	return s
 }
