@@ -100,6 +100,8 @@ func main() {
 	// Download file from John Hopkins
 	fileUrl := "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv"
 	filename := "time_series_covid19_deaths_global.csv"
+	// fileUrl := "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
+	// filename := "time_series_covid19_confirmed_global.csv"
 	downloaded := false
 	err := DownloadFile(filename, fileUrl, &downloaded)
 	if err != nil {
@@ -196,7 +198,7 @@ func main() {
 	f2.Close()
 
 	// Country selection and polulation
-	nbrPlotCountries := 4
+	nbrPlotCountries := 6
 	selCountry := make([]countryIndex, nbrPlotCountries)
 
 	selCountry[0].country = "Sweden"
@@ -205,12 +207,19 @@ func main() {
 	selCountry[1].country = "Italy"
 	selCountry[1].polulation = 60
 	selCountry[1].lineColor = color.RGBA{R: 255, A: 255}
-	selCountry[2].country = "France"
-	selCountry[2].polulation = 67
+	selCountry[2].country = "US"
+	selCountry[2].polulation = 328
 	selCountry[2].lineColor = color.RGBA{G: 255, A: 255}
 	selCountry[3].country = "Denmark"
 	selCountry[3].polulation = 5.8
 	selCountry[3].lineColor = color.RGBA{B: 255, R: 255, A: 255}
+	selCountry[4].country = "Brazil"
+	selCountry[4].polulation = 210
+	selCountry[4].lineColor = color.RGBA{G: 255, R: 255, A: 255}
+	selCountry[5].country = "Israel"
+	selCountry[5].polulation = 9
+	selCountry[5].lineColor = color.RGBA{G: 255, B: 255, A: 255}
+
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := 0; j < nbrOfCountries; j++ {
 			if strings.Compare(selCountry[i].country, jhData.country[j].country) == 0 && strings.Compare(jhData.country[j].province, "") == 0 {
