@@ -95,6 +95,38 @@ func DownloadFile(filename string, url string, downloaded *bool) error {
 	return err
 }
 
+func jhLineSplit(s string) []string {
+
+	startpos := 0
+	endpos := 1
+	var words []string
+
+	for endpos < len(s) {
+		// fmt.Println(s[endpos-1 : endpos])
+		if strings.Compare(s[endpos-1:endpos], "\"") == 0 {
+			endpos++
+			// fmt.Println(s[endpos-1 : endpos])
+			for strings.Compare(s[endpos-1:endpos], "\"") != 0 {
+				endpos++
+				// fmt.Println(s[endpos-1 : endpos])
+			}
+		}
+		if strings.Compare(s[endpos-1:endpos], ",") == 0 {
+			substring := s[startpos : endpos-1]
+			words = append(words, substring)
+			// fmt.Println(substring)
+			startpos = endpos
+			endpos = startpos + 1
+		} else {
+			endpos++
+		}
+	}
+	substring := s[startpos:endpos]
+	words = append(words, substring)
+	// fmt.Println(substring)
+	return words
+}
+
 func main() {
 
 	// Download file from John Hopkins
@@ -111,6 +143,7 @@ func main() {
 		fmt.Println("Downloaded: " + filename)
 	}
 
+	// filename = "test.csv"
 	//
 	// Determine data set size (number of dates and number of regions/countries)
 	//
@@ -172,10 +205,14 @@ func main() {
 		scanner2.Scan()
 		s := scanner2.Text()
 		// Dirty fix!
-		s = strings.Replace(s, "\"Korea, South\"", "Korea; South", -1)
-		s = strings.Replace(s, "\"Bonaire, Sint Eustatius and Saba\"", "Bonaire; Sint Eustatius and Saba", -1)
-		s = strings.Replace(s, "\"Saint Helena, Ascension and Tristan da Cunha\"", "Saint Helena; Ascension and Tristan da Cunha", -1)
-		line = strings.Split(s, ",")
+		// s = strings.Replace(s, "\"Korea, South\"", "Korea; South", -1)
+		// s = strings.Replace(s, "\"Bonaire, Sint Eustatius and Saba\"", "Bonaire; Sint Eustatius and Saba", -1)
+		// s = strings.Replace(s, "\"Saint Helena, Ascension and Tristan da Cunha\"", "Saint Helena; Ascension and Tristan da Cunha", -1)
+		// line = strings.Split(s, ",")
+		line = jhLineSplit(s)
+		// fmt.Printf("%T\n", line)
+		// line2 := myStringSplit(s)
+		// fmt.Printf("%T\n", line2)
 		jhData.country[i].province = line[0]
 		jhData.country[i].country = line[1]
 		jhData.country[i].lat, err = strconv.ParseFloat(line[2], 64)
@@ -324,7 +361,7 @@ func main() {
 
 }
 
-// MyTicks, based on example at https://github.com/gonum/plot/issues/296
+// MyTicks, based on example from https://github.com/gonum/plot/issues/296
 type myTicks struct{}
 
 // Ticks returns Ticks in the specified range.
