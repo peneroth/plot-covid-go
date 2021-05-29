@@ -127,12 +127,16 @@ func jhLineSplit(s string) []string {
 	return words
 }
 
-func getColor(s string, pos int) (num, pos2 int) {
+func getRGBAvalue(s string, pos int) (num, pos2 int) {
 	if s[pos] == ':' {
 		pos++
 	} else {
 		fmt.Println("Wrong format, expecting :")
 		os.Exit(0)
+	}
+	// Allow space of tab after : character
+	for s[pos] == ' ' || s[pos] == '\t' {
+		pos++
 	}
 	pos2 = pos
 	for s[pos2] >= '0' && s[pos2] <= '9' {
@@ -223,15 +227,7 @@ func main() {
 	for i := 0; i < nbrOfCountries; i++ {
 		scanner2.Scan()
 		s := scanner2.Text()
-		// Dirty fix!
-		// s = strings.Replace(s, "\"Korea, South\"", "Korea; South", -1)
-		// s = strings.Replace(s, "\"Bonaire, Sint Eustatius and Saba\"", "Bonaire; Sint Eustatius and Saba", -1)
-		// s = strings.Replace(s, "\"Saint Helena, Ascension and Tristan da Cunha\"", "Saint Helena; Ascension and Tristan da Cunha", -1)
-		// line = strings.Split(s, ",")
 		line = jhLineSplit(s)
-		// fmt.Printf("%T\n", line)
-		// line2 := myStringSplit(s)
-		// fmt.Printf("%T\n", line2)
 		jhData.country[i].province = line[0]
 		jhData.country[i].country = line[1]
 		jhData.country[i].lat, err = strconv.ParseFloat(line[2], 64)
@@ -253,13 +249,13 @@ func main() {
 	}
 	f2.Close()
 
-	// Country selection and polulation
+	// Parse country selection file
 	filename = "selected_countries.txt"
 	f3, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
-	// Read line by line
+	// Determine size
 	scanner3 := bufio.NewScanner(f3)
 	nbrPlotCountries := 0
 	for scanner3.Scan() {
@@ -277,7 +273,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Read line by line
+	// Read data
 	scanner4 := bufio.NewScanner(f4)
 	i := 0
 	j := 0
@@ -291,31 +287,34 @@ func main() {
 				fmt.Println("Fail to read population")
 				panic(err)
 			}
-			// Solve reading colors here
 			pos := strings.Index(s, "{") + 1
 			num := 0
 			for s[pos] != '}' {
 				switch s[pos] {
 				case 'R':
 					pos++
-					num, pos = getColor(s, pos)
+					num, pos = getRGBAvalue(s, pos)
 					selCountry[j].lineColor.R = uint8(num)
 				case 'G':
 					pos++
-					num, pos = getColor(s, pos)
+					num, pos = getRGBAvalue(s, pos)
 					selCountry[j].lineColor.G = uint8(num)
 				case 'B':
 					pos++
-					num, pos = getColor(s, pos)
+					num, pos = getRGBAvalue(s, pos)
 					selCountry[j].lineColor.B = uint8(num)
 				case 'A':
 					pos++
-					num, pos = getColor(s, pos)
+					num, pos = getRGBAvalue(s, pos)
 					selCountry[j].lineColor.A = uint8(num)
 				case ' ':
 					pos++
+				case '\t':
+					pos++
+				case ',':
+					pos++
 				default:
-					fmt.Println("Wrong format")
+					fmt.Println("Wrong country selection file format")
 					os.Exit(0)
 				}
 			}

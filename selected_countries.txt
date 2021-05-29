@@ -1,8 +1,9 @@
 Country/Region, Polulation (in millions), Color
 Sweden,  10,  {B:255 A:255}
 Italy,   60,  {R:255 A:255}
-US,      328, {G:255 A:255}
+US,		328, {G:255 A:255}
 Denmark, 5.8, {B:255 R:255 A:255}
 Brazil,  210, {G:255 R:255 A:255}
 Israel,  9,   {G:255 B:255 A:255}
 United Kingdom, 67,  {G:200 B:50 A:255}
+India,  1366, {B:255 R:255 A:50}
