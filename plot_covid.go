@@ -127,6 +127,25 @@ func jhLineSplit(s string) []string {
 	return words
 }
 
+func getColor(s string, pos int) (num, pos2 int) {
+	if s[pos] == ':' {
+		pos++
+	} else {
+		fmt.Println("Wrong format, expecting :")
+		os.Exit(0)
+	}
+	pos2 = pos
+	for s[pos2] >= '0' && s[pos2] <= '9' {
+		pos2++
+	}
+	num, err := strconv.Atoi(s[pos:pos2])
+	if err != nil {
+		fmt.Println("Fail to read color uint8")
+		panic(err)
+	}
+	return num, pos2
+}
+
 func main() {
 
 	// Download file from John Hopkins
@@ -235,33 +254,88 @@ func main() {
 	f2.Close()
 
 	// Country selection and polulation
-	nbrPlotCountries := 6
+	filename = "selected_countries.csv"
+	f3, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	// Read line by line
+	scanner3 := bufio.NewScanner(f3)
+	nbrPlotCountries := 0
+	for scanner3.Scan() {
+		line := scanner3.Text()
+		// fmt.Printf("%T\n", line)
+		// fmt.Println(len(line))
+		// fmt.Printf("%T\n", len(line))
+		if (len(line) > 0) && (strings.Count(line, "#") == 0) {
+			nbrPlotCountries++
+		}
+	}
+	nbrPlotCountries-- // Remove first row (heading)
+	f3.Close()
+	fmt.Println("nbrPlotCountries = ", nbrPlotCountries)
+
 	selCountry := make([]countryIndex, nbrPlotCountries)
+	f4, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	// Read line by line
+	scanner4 := bufio.NewScanner(f4)
+	i := 0
+	j := 0
+	for scanner4.Scan() {
+		s := scanner4.Text()
+		if i > 0 && strings.Count(s, "#") == 0 {
+			line = jhLineSplit(s)
+			selCountry[j].country = strings.TrimSpace(line[0])
+			selCountry[j].polulation, err = strconv.ParseFloat(strings.TrimSpace(line[1]), 64)
+			fmt.Println(selCountry[j].polulation)
+			if err != nil {
+				fmt.Println("Fail to read population")
+				panic(err)
+			}
+			// Solve reading colors here
+			pos := strings.Index(s, "{") + 1
+			num := 0
+			for s[pos] != '}' {
+				switch s[pos] {
+				case 'R':
+					pos++
+					num, pos = getColor(s, pos)
+					selCountry[j].lineColor.R = uint8(num)
+				case 'G':
+					pos++
+					num, pos = getColor(s, pos)
+					selCountry[j].lineColor.G = uint8(num)
+				case 'B':
+					pos++
+					num, pos = getColor(s, pos)
+					selCountry[j].lineColor.B = uint8(num)
+				case 'A':
+					pos++
+					num, pos = getColor(s, pos)
+					selCountry[j].lineColor.A = uint8(num)
+				case ' ':
+					pos++
+				default:
+					fmt.Println("Wrong format")
+					os.Exit(0)
+				}
+			}
+			i++
+			j++
+		} else {
+			i++
+		}
+	}
 
-	selCountry[0].country = "Sweden"
-	selCountry[0].polulation = 10
-	selCountry[0].lineColor = color.RGBA{B: 255, A: 255}
-	selCountry[1].country = "Italy"
-	selCountry[1].polulation = 60
-	selCountry[1].lineColor = color.RGBA{R: 255, A: 255}
-	selCountry[2].country = "US"
-	selCountry[2].polulation = 328
-	selCountry[2].lineColor = color.RGBA{G: 255, A: 255}
-	selCountry[3].country = "Denmark"
-	selCountry[3].polulation = 5.8
-	selCountry[3].lineColor = color.RGBA{B: 255, R: 255, A: 255}
-	selCountry[4].country = "Brazil"
-	selCountry[4].polulation = 210
-	selCountry[4].lineColor = color.RGBA{G: 255, R: 255, A: 255}
-	selCountry[5].country = "Israel"
-	selCountry[5].polulation = 9
-	selCountry[5].lineColor = color.RGBA{G: 255, B: 255, A: 255}
-
+	// Find index in jhData for the selected countries
 	for i := 0; i < nbrPlotCountries; i++ {
 		for j := 0; j < nbrOfCountries; j++ {
 			if strings.Compare(selCountry[i].country, jhData.country[j].country) == 0 && strings.Compare(jhData.country[j].province, "") == 0 {
-				fmt.Println("Country =", jhData.country[j].country, "Province =", jhData.country[j].province, "index =", j)
 				selCountry[i].jhIndex = j
+				fmt.Println("Country =", jhData.country[j].country, "Province =", jhData.country[j].province, "index =", j)
 				break
 			}
 		}
