@@ -254,7 +254,7 @@ func main() {
 	f2.Close()
 
 	// Country selection and polulation
-	filename = "selected_countries.csv"
+	filename = "selected_countries.txt"
 	f3, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -264,9 +264,6 @@ func main() {
 	nbrPlotCountries := 0
 	for scanner3.Scan() {
 		line := scanner3.Text()
-		// fmt.Printf("%T\n", line)
-		// fmt.Println(len(line))
-		// fmt.Printf("%T\n", len(line))
 		if (len(line) > 0) && (strings.Count(line, "#") == 0) {
 			nbrPlotCountries++
 		}
@@ -290,7 +287,6 @@ func main() {
 			line = jhLineSplit(s)
 			selCountry[j].country = strings.TrimSpace(line[0])
 			selCountry[j].polulation, err = strconv.ParseFloat(strings.TrimSpace(line[1]), 64)
-			fmt.Println(selCountry[j].polulation)
 			if err != nil {
 				fmt.Println("Fail to read population")
 				panic(err)
