@@ -170,23 +170,23 @@ func main() {
 	//
 	// Determine data set size (number of dates and number of regions/countries)
 	//
-	f1, err := os.Open(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	// Read line by line
-	scanner1 := bufio.NewScanner(f1)
+	scanner := bufio.NewScanner(f)
 	nbrOfCountries := 0
 	nbrOfDates := 0
-	for scanner1.Scan() {
+	for scanner.Scan() {
 		if nbrOfCountries == 0 {
-			line := scanner1.Text()
+			line := scanner.Text()
 			nbrOfDates = strings.Count(line, ",") - 3
 		}
 		nbrOfCountries++
 	}
 	nbrOfCountries-- // Remove first row (heading)
-	f1.Close()
+	f.Close()
 	fmt.Println("nbrOfCountries = ", nbrOfCountries)
 	fmt.Println("nbrOfDates = ", nbrOfDates)
 
@@ -198,17 +198,17 @@ func main() {
 	jhData.dates_s = make([]string, nbrOfDates)
 	jhData.dates = make([]int64, nbrOfDates)
 	jhData.country = make([]countryData, nbrOfCountries)
-	f2, err := os.Open(filename)
+	f, err = os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	// Read first line
-	scanner2 := bufio.NewScanner(f2)
-	if !scanner2.Scan() {
+	scanner = bufio.NewScanner(f)
+	if !scanner.Scan() {
 		fmt.Println("Reached end of file")
 		os.Exit(0)
 	}
-	line := strings.Split(scanner2.Text(), ",")
+	line := strings.Split(scanner.Text(), ",")
 	jhData.heading[0] = line[0]
 	jhData.heading[1] = line[1]
 	jhData.heading[2] = line[2]
@@ -225,8 +225,8 @@ func main() {
 		jhData.dates[i] = time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix()
 	}
 	for i := 0; i < nbrOfCountries; i++ {
-		scanner2.Scan()
-		s := scanner2.Text()
+		scanner.Scan()
+		s := scanner.Text()
 		line = jhLineSplit(s)
 		jhData.country[i].province = line[0]
 		jhData.country[i].country = line[1]
@@ -247,38 +247,38 @@ func main() {
 			}
 		}
 	}
-	f2.Close()
+	f.Close()
 
 	// Parse country selection file
 	filename = "selected_countries.txt"
-	f3, err := os.Open(filename)
+	f, err = os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	// Determine size
-	scanner3 := bufio.NewScanner(f3)
+	scanner = bufio.NewScanner(f)
 	nbrPlotCountries := 0
-	for scanner3.Scan() {
-		line := scanner3.Text()
+	for scanner.Scan() {
+		line := scanner.Text()
 		if (len(line) > 0) && (strings.Count(line, "#") == 0) {
 			nbrPlotCountries++
 		}
 	}
 	nbrPlotCountries-- // Remove first row (heading)
-	f3.Close()
+	f.Close()
 	fmt.Println("nbrPlotCountries = ", nbrPlotCountries)
 
 	selCountry := make([]countryIndex, nbrPlotCountries)
-	f4, err := os.Open(filename)
+	f, err = os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	// Read data
-	scanner4 := bufio.NewScanner(f4)
+	scanner = bufio.NewScanner(f)
 	i := 0
 	j := 0
-	for scanner4.Scan() {
-		s := scanner4.Text()
+	for scanner.Scan() {
+		s := scanner.Text()
 		if i > 0 && strings.Count(s, "#") == 0 {
 			line = jhLineSplit(s)
 			selCountry[j].country = strings.TrimSpace(line[0])
@@ -324,6 +324,7 @@ func main() {
 			i++
 		}
 	}
+	f.Close()
 
 	// Find index in jhData for the selected countries
 	for i := 0; i < nbrPlotCountries; i++ {
