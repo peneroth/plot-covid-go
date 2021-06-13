@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"image/color"
 	"io"
@@ -9,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"gonum.org/v1/plot"
@@ -26,10 +24,12 @@ type countryData struct {
 }
 
 type setOfJhData struct {
-	heading [4]string
-	dates_s []string
-	dates   []int64
-	country []countryData
+	heading        [4]string
+	dates_s        []string
+	dates          []int64
+	country        []countryData
+	nbrOfCountries int
+	nbrOfDates     int
 }
 
 type countryProcData struct {
@@ -46,6 +46,11 @@ type countryIndex struct {
 	polulation float64
 	jhIndex    int
 	lineColor  color.RGBA
+}
+
+type setOfSelectedCountries struct {
+	country              []countryIndex
+	nbrSelectedCountries int
 }
 
 func exitError(err error) {
@@ -95,38 +100,6 @@ func DownloadFile(filename string, url string, downloaded *bool) error {
 	return err
 }
 
-func jhLineSplit(s string) []string {
-
-	startpos := 0
-	endpos := 1
-	var words []string
-
-	for endpos < len(s) {
-		// fmt.Println(s[endpos-1 : endpos])
-		if strings.Compare(s[endpos-1:endpos], "\"") == 0 {
-			endpos++
-			// fmt.Println(s[endpos-1 : endpos])
-			for strings.Compare(s[endpos-1:endpos], "\"") != 0 {
-				endpos++
-				// fmt.Println(s[endpos-1 : endpos])
-			}
-		}
-		if strings.Compare(s[endpos-1:endpos], ",") == 0 {
-			substring := s[startpos : endpos-1]
-			words = append(words, substring)
-			// fmt.Println(substring)
-			startpos = endpos
-			endpos = startpos + 1
-		} else {
-			endpos++
-		}
-	}
-	substring := s[startpos:endpos]
-	words = append(words, substring)
-	// fmt.Println(substring)
-	return words
-}
-
 func getRGBAvalue(s string, pos int) (num, pos2 int) {
 	if s[pos] == ':' {
 		pos++
@@ -166,193 +139,29 @@ func main() {
 		fmt.Println("Downloaded: " + filename)
 	}
 
-	// filename = "test.csv"
-	//
-	// Determine data set size (number of dates and number of regions/countries)
-	//
-	f, err := os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	// Read line by line
-	scanner := bufio.NewScanner(f)
-	nbrOfCountries := 0
-	nbrOfDates := 0
-	for scanner.Scan() {
-		if nbrOfCountries == 0 {
-			line := scanner.Text()
-			nbrOfDates = strings.Count(line, ",") - 3
-		}
-		nbrOfCountries++
-	}
-	nbrOfCountries-- // Remove first row (heading)
-	f.Close()
-	fmt.Println("nbrOfCountries = ", nbrOfCountries)
-	fmt.Println("nbrOfDates = ", nbrOfDates)
+	// Read and parse John Hopkins data
+	jhData := parseJHData(filename)
 
-	//
-	// Read the data
-	//
-	// Allocate memory
-	var jhData setOfJhData
-	jhData.dates_s = make([]string, nbrOfDates)
-	jhData.dates = make([]int64, nbrOfDates)
-	jhData.country = make([]countryData, nbrOfCountries)
-	f, err = os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	// Read first line
-	scanner = bufio.NewScanner(f)
-	if !scanner.Scan() {
-		fmt.Println("Reached end of file")
-		os.Exit(0)
-	}
-	line := strings.Split(scanner.Text(), ",")
-	jhData.heading[0] = line[0]
-	jhData.heading[1] = line[1]
-	jhData.heading[2] = line[2]
-	jhData.heading[3] = line[3]
-	for i := 0; i < nbrOfDates; i++ {
-		jhData.dates_s[i] = line[i+4]
-		s := strings.Split(jhData.dates_s[i], "/")
-		month, err := strconv.Atoi(s[0])
-		exitError(err)
-		day, err := strconv.Atoi(s[1])
-		exitError(err)
-		year, err := strconv.Atoi(s[2])
-		exitError(err)
-		jhData.dates[i] = time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix()
-	}
-	for i := 0; i < nbrOfCountries; i++ {
-		scanner.Scan()
-		s := scanner.Text()
-		line = jhLineSplit(s)
-		jhData.country[i].province = line[0]
-		jhData.country[i].country = line[1]
-		jhData.country[i].lat, err = strconv.ParseFloat(line[2], 64)
-		if err != nil {
-			jhData.country[i].lat = 0
-		}
-		jhData.country[i].long, err = strconv.ParseFloat(line[3], 64)
-		if err != nil {
-			jhData.country[i].long = 0
-		}
-		jhData.country[i].deaths = make([]int64, nbrOfDates)
-		for j := 0; j < nbrOfDates; j++ {
-			jhData.country[i].deaths[j], err = strconv.ParseInt(line[j+4], 10, 64)
-			if err != nil {
-				fmt.Println("err 3")
-				panic(err)
-			}
-		}
-	}
-	f.Close()
-
-	// Parse country selection file
+	// Read and parse country selection file
 	filename = "selected_countries.txt"
-	f, err = os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	// Determine size
-	scanner = bufio.NewScanner(f)
-	nbrPlotCountries := 0
-	for scanner.Scan() {
-		line := scanner.Text()
-		if (len(line) > 0) && (strings.Count(line, "#") == 0) {
-			nbrPlotCountries++
-		}
-	}
-	nbrPlotCountries-- // Remove first row (heading)
-	f.Close()
-	fmt.Println("nbrPlotCountries = ", nbrPlotCountries)
-
-	selCountry := make([]countryIndex, nbrPlotCountries)
-	f, err = os.Open(filename)
-	if err != nil {
-		panic(err)
-	}
-	// Read data
-	scanner = bufio.NewScanner(f)
-	i := 0
-	j := 0
-	for scanner.Scan() {
-		s := scanner.Text()
-		if i > 0 && strings.Count(s, "#") == 0 {
-			line = jhLineSplit(s)
-			selCountry[j].country = strings.TrimSpace(line[0])
-			selCountry[j].polulation, err = strconv.ParseFloat(strings.TrimSpace(line[1]), 64)
-			if err != nil {
-				fmt.Println("Fail to read population")
-				panic(err)
-			}
-			pos := strings.Index(s, "{") + 1
-			num := 0
-			for s[pos] != '}' {
-				switch s[pos] {
-				case 'R':
-					pos++
-					num, pos = getRGBAvalue(s, pos)
-					selCountry[j].lineColor.R = uint8(num)
-				case 'G':
-					pos++
-					num, pos = getRGBAvalue(s, pos)
-					selCountry[j].lineColor.G = uint8(num)
-				case 'B':
-					pos++
-					num, pos = getRGBAvalue(s, pos)
-					selCountry[j].lineColor.B = uint8(num)
-				case 'A':
-					pos++
-					num, pos = getRGBAvalue(s, pos)
-					selCountry[j].lineColor.A = uint8(num)
-				case ' ':
-					pos++
-				case '\t':
-					pos++
-				case ',':
-					pos++
-				default:
-					fmt.Println("Wrong country selection file format")
-					os.Exit(0)
-				}
-			}
-			i++
-			j++
-		} else {
-			i++
-		}
-	}
-	f.Close()
-
-	// Find index in jhData for the selected countries
-	for i := 0; i < nbrPlotCountries; i++ {
-		for j := 0; j < nbrOfCountries; j++ {
-			if strings.Compare(selCountry[i].country, jhData.country[j].country) == 0 && strings.Compare(jhData.country[j].province, "") == 0 {
-				selCountry[i].jhIndex = j
-				fmt.Println("Country =", jhData.country[j].country, "Province =", jhData.country[j].province, "index =", j)
-				break
-			}
-		}
-	}
+	selCountries := parseCountrySelection(filename, jhData)
 
 	// Process data
 	var jhProcData procData
-	jhProcData.country = make([]countryProcData, nbrOfCountries)
+	jhProcData.country = make([]countryProcData, jhData.nbrOfCountries)
 
-	for i := 0; i < nbrOfCountries; i++ {
+	for i := 0; i < jhData.nbrOfCountries; i++ {
 		// Calc new Deaths
-		jhProcData.country[i].newDeaths = make([]int64, nbrOfDates)
+		jhProcData.country[i].newDeaths = make([]int64, jhData.nbrOfDates)
 		jhProcData.country[i].newDeaths[0] = 0
-		for j := 1; j < nbrOfDates; j++ {
+		for j := 1; j < jhData.nbrOfDates; j++ {
 			jhProcData.country[i].newDeaths[j] = jhData.country[i].deaths[j] - jhData.country[i].deaths[j-1]
 		}
 		// Calc average value
 		avgSize := 7 // must be an odd value
 		avgBoarder := (avgSize - 1) / 2
-		jhProcData.country[i].newDeathsMean = make([]int64, nbrOfDates)
-		for j := avgBoarder; j < nbrOfDates-avgBoarder; j++ {
+		jhProcData.country[i].newDeathsMean = make([]int64, jhData.nbrOfDates)
+		for j := avgBoarder; j < jhData.nbrOfDates-avgBoarder; j++ {
 			meanValue := int64(0)
 			for k := j - avgBoarder; k < j+avgBoarder; k++ {
 				meanValue += jhProcData.country[i].newDeaths[k]
@@ -360,12 +169,12 @@ func main() {
 			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(avgSize)
 		}
 		// Partial moving agerage for the last dates
-		for j := nbrOfDates - avgBoarder; j < nbrOfDates; j++ {
+		for j := jhData.nbrOfDates - avgBoarder; j < jhData.nbrOfDates; j++ {
 			meanValue := int64(0)
-			for k := j - avgBoarder; k < nbrOfDates; k++ {
+			for k := j - avgBoarder; k < jhData.nbrOfDates; k++ {
 				meanValue += jhProcData.country[i].newDeaths[k]
 			}
-			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(nbrOfDates-(j-avgBoarder))
+			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(jhData.nbrOfDates-(j-avgBoarder))
 		}
 	}
 
@@ -377,20 +186,21 @@ func main() {
 	p.Add(plotter.NewGrid())
 
 	// fmt.Printf("%T\n", plotLines[0].pts)
-	pts := make(plotter.XYs, nbrOfDates)
-	for i := 0; i < nbrPlotCountries; i++ {
+	pts := make(plotter.XYs, jhData.nbrOfDates)
+	for i := 0; i < selCountries.nbrSelectedCountries; i++ {
 		for j := range pts {
 			pts[j].X = float64(jhData.dates[j])
-			pts[j].Y = float64(jhProcData.country[selCountry[i].jhIndex].newDeathsMean[j]) / selCountry[i].polulation
+			// pts[j].Y = float64(jhProcData.country[selCountry[i].jhIndex].newDeathsMean[j]) / selCountry[i].polulation
+			pts[j].Y = float64(jhProcData.country[selCountries.country[i].jhIndex].newDeathsMean[j]) / selCountries.country[i].polulation
 		}
 		plot_line, err := plotter.NewLine(pts)
 		if err != nil {
 			log.Panic(err)
 		}
-		plot_line.Color = selCountry[i].lineColor
+		plot_line.Color = selCountries.country[i].lineColor
 		// fmt.Printf("%T\n", plot_line.Color)
 		p.Add(plot_line)
-		p.Legend.Add(selCountry[i].country, plot_line)
+		p.Legend.Add(selCountries.country[i].country, plot_line)
 		p.Legend.Top = true
 	}
 
@@ -407,20 +217,20 @@ func main() {
 	p2.Add(plotter.NewGrid())
 
 	// fmt.Printf("%T\n", plotLines[0].pts)
-	pts2 := make(plotter.XYs, nbrOfDates)
-	for i := 0; i < nbrPlotCountries; i++ {
+	pts2 := make(plotter.XYs, jhData.nbrOfDates)
+	for i := 0; i < selCountries.nbrSelectedCountries; i++ {
 		for j := range pts {
 			pts2[j].X = float64(jhData.dates[j])
-			pts2[j].Y = float64(jhData.country[selCountry[i].jhIndex].deaths[j]) / selCountry[i].polulation
+			pts2[j].Y = float64(jhData.country[selCountries.country[i].jhIndex].deaths[j]) / selCountries.country[i].polulation
 		}
 		plot_line2, err := plotter.NewLine(pts2)
 		if err != nil {
 			log.Panic(err)
 		}
-		plot_line2.Color = selCountry[i].lineColor
+		plot_line2.Color = selCountries.country[i].lineColor
 		// fmt.Printf("%T\n", plot_line.Color)
 		p2.Add(plot_line2)
-		p2.Legend.Add(selCountry[i].country, plot_line2)
+		p2.Legend.Add(selCountries.country[i].country, plot_line2)
 		p2.Legend.Top = false
 	}
 
