@@ -15,23 +15,6 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-type countryData struct {
-	province string
-	country  string
-	lat      float64
-	long     float64
-	deaths   []int64
-}
-
-type setOfJhData struct {
-	heading        [4]string
-	dates_s        []string
-	dates          []int64
-	country        []countryData
-	nbrOfCountries int
-	nbrOfDates     int
-}
-
 type countryProcData struct {
 	newDeaths     []int64
 	newDeathsMean []int64
@@ -98,29 +81,6 @@ func DownloadFile(filename string, url string, downloaded *bool) error {
 	_, err = io.Copy(out, resp.Body)
 	*downloaded = true
 	return err
-}
-
-func getRGBAvalue(s string, pos int) (num, pos2 int) {
-	if s[pos] == ':' {
-		pos++
-	} else {
-		fmt.Println("Wrong format, expecting :")
-		os.Exit(0)
-	}
-	// Allow space of tab after : character
-	for s[pos] == ' ' || s[pos] == '\t' {
-		pos++
-	}
-	pos2 = pos
-	for s[pos2] >= '0' && s[pos2] <= '9' {
-		pos2++
-	}
-	num, err := strconv.Atoi(s[pos:pos2])
-	if err != nil {
-		fmt.Println("Fail to read color uint8")
-		panic(err)
-	}
-	return num, pos2
 }
 
 func main() {

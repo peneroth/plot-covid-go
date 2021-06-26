@@ -8,6 +8,29 @@ import (
 	"strings"
 )
 
+func getRGBAvalue(s string, pos int) (num, pos2 int) {
+	if s[pos] == ':' {
+		pos++
+	} else {
+		fmt.Println("Wrong format, expecting :")
+		os.Exit(0)
+	}
+	// Allow space of tab after : character
+	for s[pos] == ' ' || s[pos] == '\t' {
+		pos++
+	}
+	pos2 = pos
+	for s[pos2] >= '0' && s[pos2] <= '9' {
+		pos2++
+	}
+	num, err := strconv.Atoi(s[pos:pos2])
+	if err != nil {
+		fmt.Println("Fail to read color uint8")
+		panic(err)
+	}
+	return num, pos2
+}
+
 func parseCountrySelection(filename string, jhData setOfJhData) setOfSelectedCountries {
 	var selectedCountries setOfSelectedCountries
 

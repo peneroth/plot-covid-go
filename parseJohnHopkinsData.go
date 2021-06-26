@@ -9,6 +9,35 @@ import (
 	"time"
 )
 
+type countryData struct {
+	province string
+	country  string
+	lat      float64
+	long     float64
+	deaths   []int64
+}
+
+type setOfJhData struct {
+	heading        [4]string
+	dates_s        []string
+	dates          []int64
+	country        []countryData
+	nbrOfCountries int
+	nbrOfDates     int
+}
+
+func (jhData *setOfJhData) init(nbrOfCountries int, nbrOfDates int) {
+	// Test
+	jhData.dates_s = make([]string, nbrOfDates)
+	jhData.dates = make([]int64, nbrOfDates)
+	jhData.country = make([]countryData, nbrOfCountries)
+	for i := 0; i < nbrOfCountries; i++ {
+		jhData.country[i].deaths = make([]int64, nbrOfDates)
+	}
+	jhData.nbrOfCountries = nbrOfCountries
+	jhData.nbrOfDates = nbrOfDates
+}
+
 func jhLineSplit(s string) []string {
 
 	startpos := 0
@@ -50,27 +79,29 @@ func parseJHData(filename string) setOfJhData {
 	}
 	// Read line by line
 	scanner := bufio.NewScanner(f)
-	jhData.nbrOfCountries = 0
-	jhData.nbrOfDates = 0
+	nbrOfCountries := 0
+	nbrOfDates := 0
 	for scanner.Scan() {
-		if jhData.nbrOfCountries == 0 {
+		if nbrOfCountries == 0 {
 			line := scanner.Text()
-			jhData.nbrOfDates = strings.Count(line, ",") - 3
+			nbrOfDates = strings.Count(line, ",") - 3
 		}
-		jhData.nbrOfCountries++
+		nbrOfCountries++
 	}
-	jhData.nbrOfCountries-- // Remove first row (heading)
+	nbrOfCountries-- // Remove first row (heading)
 	f.Close()
-	fmt.Println("nbrOfCountries = ", jhData.nbrOfCountries)
-	fmt.Println("nbrOfDates = ", jhData.nbrOfDates)
+	fmt.Println("nbrOfCountries = ", nbrOfCountries)
+	fmt.Println("nbrOfDates = ", nbrOfDates)
 
 	//
 	// Read the data
 	//
 	// Allocate memory
-	jhData.dates_s = make([]string, jhData.nbrOfDates)
-	jhData.dates = make([]int64, jhData.nbrOfDates)
-	jhData.country = make([]countryData, jhData.nbrOfCountries)
+	jhData.init(nbrOfCountries, nbrOfDates)
+	//	jhData.dates_s = make([]string, jhData.nbrOfDates)
+	//	jhData.dates = make([]int64, jhData.nbrOfDates)
+	//	jhData.country = make([]countryData, jhData.nbrOfCountries)
+
 	f, err = os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -86,7 +117,7 @@ func parseJHData(filename string) setOfJhData {
 	jhData.heading[1] = line[1]
 	jhData.heading[2] = line[2]
 	jhData.heading[3] = line[3]
-	for i := 0; i < jhData.nbrOfDates; i++ {
+	for i := 0; i < nbrOfDates; i++ {
 		jhData.dates_s[i] = line[i+4]
 		s := strings.Split(jhData.dates_s[i], "/")
 		month, err := strconv.Atoi(s[0])
@@ -97,7 +128,7 @@ func parseJHData(filename string) setOfJhData {
 		exitError(err)
 		jhData.dates[i] = time.Date(year+2000, time.Month(month), day, 0, 0, 0, 0, time.UTC).Unix()
 	}
-	for i := 0; i < jhData.nbrOfCountries; i++ {
+	for i := 0; i < nbrOfCountries; i++ {
 		scanner.Scan()
 		s := scanner.Text()
 		line = jhLineSplit(s)
@@ -111,8 +142,8 @@ func parseJHData(filename string) setOfJhData {
 		if err != nil {
 			jhData.country[i].long = 0
 		}
-		jhData.country[i].deaths = make([]int64, jhData.nbrOfDates)
-		for j := 0; j < jhData.nbrOfDates; j++ {
+		// jhData.country[i].deaths = make([]int64, jhData.nbrOfDates)
+		for j := 0; j < nbrOfDates; j++ {
 			jhData.country[i].deaths[j], err = strconv.ParseInt(line[j+4], 10, 64)
 			if err != nil {
 				fmt.Println("err 3")
