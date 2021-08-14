@@ -134,7 +134,10 @@ func main() {
 			for k := j - avgBoarder; k < jhData.nbrOfDates; k++ {
 				meanValue += jhProcData.country[i].newDeaths[k]
 			}
-			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(jhData.nbrOfDates-(j-avgBoarder))
+			// jhProcData.country[i].newDeathsMean[j] = meanValue / int64(jhData.nbrOfDates-(j-avgBoarder))
+			dataSize := int64(jhData.nbrOfDates - (j - avgBoarder))
+			meanValue = meanValue / dataSize
+			jhProcData.country[i].newDeathsMean[j] = meanValue
 		}
 	}
 
@@ -145,13 +148,17 @@ func main() {
 	p.Y.Label.Text = "Deaths per one millon"
 	p.Add(plotter.NewGrid())
 
+	//
+	startDateIndex := 200
+	endDateIndex := jhData.nbrOfDates - 1
+	nbrOfPlotDates := endDateIndex - startDateIndex + 1
+
 	// fmt.Printf("%T\n", plotLines[0].pts)
-	pts := make(plotter.XYs, jhData.nbrOfDates)
+	pts := make(plotter.XYs, nbrOfPlotDates)
 	for i := 0; i < selCountries.nbrSelectedCountries; i++ {
 		for j := range pts {
-			pts[j].X = float64(jhData.dates[j])
-			// pts[j].Y = float64(jhProcData.country[selCountry[i].jhIndex].newDeathsMean[j]) / selCountry[i].polulation
-			pts[j].Y = float64(jhProcData.country[selCountries.country[i].jhIndex].newDeathsMean[j]) / selCountries.country[i].polulation
+			pts[j].X = float64(jhData.dates[j+startDateIndex])
+			pts[j].Y = float64(jhProcData.country[selCountries.country[i].jhIndex].newDeathsMean[j+startDateIndex]) / selCountries.country[i].polulation
 		}
 		plot_line, err := plotter.NewLine(pts)
 		if err != nil {
@@ -177,11 +184,11 @@ func main() {
 	p2.Add(plotter.NewGrid())
 
 	// fmt.Printf("%T\n", plotLines[0].pts)
-	pts2 := make(plotter.XYs, jhData.nbrOfDates)
+	pts2 := make(plotter.XYs, nbrOfPlotDates)
 	for i := 0; i < selCountries.nbrSelectedCountries; i++ {
-		for j := range pts {
-			pts2[j].X = float64(jhData.dates[j])
-			pts2[j].Y = float64(jhData.country[selCountries.country[i].jhIndex].deaths[j]) / selCountries.country[i].polulation
+		for j := range pts2 {
+			pts2[j].X = float64(jhData.dates[j+startDateIndex])
+			pts2[j].Y = float64(jhData.country[selCountries.country[i].jhIndex].deaths[j+startDateIndex]) / selCountries.country[i].polulation
 		}
 		plot_line2, err := plotter.NewLine(pts2)
 		if err != nil {
