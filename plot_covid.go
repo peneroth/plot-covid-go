@@ -111,33 +111,22 @@ func main() {
 	jhProcData.country = make([]countryProcData, jhData.nbrOfCountries)
 
 	for i := 0; i < jhData.nbrOfCountries; i++ {
-		// Calc new Deaths
+		// Calc new Deaths per day
 		jhProcData.country[i].newDeaths = make([]int64, jhData.nbrOfDates)
 		jhProcData.country[i].newDeaths[0] = 0
 		for j := 1; j < jhData.nbrOfDates; j++ {
 			jhProcData.country[i].newDeaths[j] = jhData.country[i].deaths[j] - jhData.country[i].deaths[j-1]
 		}
 		// Calc average value
-		avgSize := 7 // must be an odd value
-		avgBoarder := (avgSize - 1) / 2
+		avgSize := 7
 		jhProcData.country[i].newDeathsMean = make([]int64, jhData.nbrOfDates)
-		for j := avgBoarder; j < jhData.nbrOfDates-avgBoarder; j++ {
+		for j := avgSize - 1; j < jhData.nbrOfDates; j++ {
 			meanValue := int64(0)
-			for k := j - avgBoarder; k < j+avgBoarder; k++ {
+			for k := j - avgSize + 1; k <= j; k++ {
+				// fmt.Println("j=", j, "k=", k)
 				meanValue += jhProcData.country[i].newDeaths[k]
 			}
 			jhProcData.country[i].newDeathsMean[j] = meanValue / int64(avgSize)
-		}
-		// Partial moving agerage for the last dates
-		for j := jhData.nbrOfDates - avgBoarder; j < jhData.nbrOfDates; j++ {
-			meanValue := int64(0)
-			for k := j - avgBoarder; k < jhData.nbrOfDates; k++ {
-				meanValue += jhProcData.country[i].newDeaths[k]
-			}
-			// jhProcData.country[i].newDeathsMean[j] = meanValue / int64(jhData.nbrOfDates-(j-avgBoarder))
-			dataSize := int64(jhData.nbrOfDates - (j - avgBoarder))
-			meanValue = meanValue / dataSize
-			jhProcData.country[i].newDeathsMean[j] = meanValue
 		}
 	}
 
