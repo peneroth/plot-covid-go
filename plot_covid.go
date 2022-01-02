@@ -117,7 +117,7 @@ func main() {
 		for j := 1; j < jhData.nbrOfDates; j++ {
 			jhProcData.country[i].newDeaths[j] = jhData.country[i].deaths[j] - jhData.country[i].deaths[j-1]
 		}
-		// Calc average value
+		// Calc average value, based on avgSize preceding days
 		avgSize := 7
 		jhProcData.country[i].newDeathsMean = make([]int64, jhData.nbrOfDates)
 		for j := avgSize - 1; j < jhData.nbrOfDates; j++ {
