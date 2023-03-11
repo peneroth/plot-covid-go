@@ -138,7 +138,7 @@ func main() {
 	p.Add(plotter.NewGrid())
 
 	//
-	startDateIndex := 200
+	startDateIndex := 0
 	endDateIndex := jhData.nbrOfDates - 1
 	nbrOfPlotDates := endDateIndex - startDateIndex + 1
 
@@ -160,7 +160,7 @@ func main() {
 		p.Legend.Top = true
 	}
 
-	err = p.Save(40*vg.Centimeter, 20*vg.Centimeter, "plot_output.png")
+	err = p.Save(50*vg.Centimeter, 25*vg.Centimeter, "plot_output.png")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -190,7 +190,7 @@ func main() {
 		p2.Legend.Top = false
 	}
 
-	err = p2.Save(40*vg.Centimeter, 20*vg.Centimeter, "plot_output2.png")
+	err = p2.Save(50*vg.Centimeter, 25*vg.Centimeter, "plot_output2.png")
 	if err != nil {
 		log.Panic(err)
 	}
